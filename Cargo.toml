@@ -1,0 +1,23 @@
+[package]
+name = "croncli"
+version = "0.1.0"
+edition = "2024"
+description = "A human-friendly cron job manager"
+license = "MIT"
+authors = ["Ruben Jongejan <ruben.jongejan@gmail.com>"]
+
+[[bin]]
+name = "croncli"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+chrono = "0.4"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+owo-colors = "4"
+
+[profile.release]
+strip = true
+lto = true
