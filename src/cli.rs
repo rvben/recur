@@ -6,11 +6,11 @@ use clap::{Parser, Subcommand};
     version,
     after_long_help = "\
 Examples:
-  croncli list
-  croncli list --user root
-  croncli explain \"*/5 * * * *\"
-  croncli check
-  croncli timeline"
+  ogni list
+  ogni list --user root
+  ogni explain \"*/5 * * * *\"
+  ogni check
+  ogni timeline"
 )]
 pub struct Cli {
     /// Output as JSON

@@ -1,13 +1,17 @@
 [package]
-name = "croncli"
+name = "ogni"
 version = "0.1.0"
 edition = "2024"
 description = "A human-friendly cron job manager"
 license = "MIT"
+repository = "https://github.com/rvben/ogni"
+homepage = "https://github.com/rvben/ogni"
+keywords = ["cron", "crontab", "schedule", "cli", "sysadmin"]
+categories = ["command-line-utilities"]
 authors = ["Ruben Jongejan <ruben.jongejan@gmail.com>"]
 
 [[bin]]
-name = "croncli"
+name = "ogni"
 path = "src/main.rs"
 
 [dependencies]
