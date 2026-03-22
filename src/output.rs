@@ -4,17 +4,10 @@ use owo_colors::OwoColorize;
 
 use crate::check::{Issue, Severity};
 use crate::cron::CronJob;
+use crate::util::truncate;
 
 pub fn use_color() -> bool {
     std::io::stdout().is_terminal()
-}
-
-pub fn print_json_success<T: serde::Serialize>(data: &T) {
-    let envelope = serde_json::json!({
-        "ok": true,
-        "data": data,
-    });
-    println!("{}", serde_json::to_string_pretty(&envelope).unwrap());
 }
 
 pub fn print_jobs_table(jobs: &[CronJob]) {
@@ -131,13 +124,5 @@ pub fn print_explain(expression: &str, description: &str) {
     } else {
         println!("  Expression: {expression}");
         println!("  Schedule:   {description}");
-    }
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max])
-    } else {
-        s.to_string()
     }
 }

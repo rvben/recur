@@ -1,4 +1,5 @@
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(
@@ -10,12 +11,21 @@ Examples:
   ogni list --user root
   ogni explain \"*/5 * * * *\"
   ogni check
-  ogni timeline"
+  ogni timeline
+  ogni schema"
 )]
 pub struct Cli {
     /// Output as JSON
     #[arg(long, short = 'j', global = true)]
     pub json: bool,
+
+    /// Suppress output, rely on exit code only
+    #[arg(long, short = 'q', global = true)]
+    pub quiet: bool,
+
+    /// Filter JSON output to specific fields (comma-separated)
+    #[arg(long, global = true)]
+    pub fields: Option<String>,
 
     #[command(subcommand)]
     pub command: Command,
@@ -49,6 +59,10 @@ pub enum Command {
         /// Check all users' cron jobs (requires root)
         #[arg(long, short = 'a')]
         all: bool,
+
+        /// Preview what would be checked without executing
+        #[arg(long)]
+        dry_run: bool,
     },
 
     /// Show a visual timeline of when jobs run
@@ -56,5 +70,27 @@ pub enum Command {
         /// Number of hours to show (default: 24)
         #[arg(long, default_value = "24")]
         hours: u32,
+
+        /// Show jobs for a specific user
+        #[arg(long, short = 'u')]
+        user: Option<String>,
+
+        /// Show all users' cron jobs (requires root)
+        #[arg(long, short = 'a')]
+        all: bool,
     },
+
+    /// Output full command schema as JSON (for AI agents and tooling)
+    Schema,
+
+    /// Generate shell completions
+    Completions {
+        /// Shell to generate completions for
+        shell: Shell,
+    },
+}
+
+pub fn print_completions(shell: Shell) {
+    let mut cmd = Cli::command();
+    clap_complete::generate(shell, &mut cmd, "ogni", &mut std::io::stdout());
 }

@@ -3,6 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 use crate::cron::CronJob;
+use crate::util::truncate;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Issue {
@@ -142,14 +143,6 @@ fn extract_executable(command: &str) -> Option<&str> {
 
     // Get first word
     cmd.split_whitespace().next()
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max])
-    } else {
-        s.to_string()
-    }
 }
 
 #[cfg(test)]
