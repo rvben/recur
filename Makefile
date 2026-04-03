@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check fmt install clean release release-patch release-minor release-major
+.PHONY: build test lint fmt check install clean release release-patch release-minor release-major
 
 build:
 	cargo build
@@ -10,13 +10,13 @@ test:
 	cargo test
 
 lint:
-	cargo clippy -- -D warnings
-
-fmt-check:
 	cargo fmt -- --check
+	cargo clippy -- -D warnings
 
 fmt:
 	cargo fmt
+
+check: lint test
 
 install:
 	cargo install --path .
