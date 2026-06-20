@@ -10,17 +10,24 @@ fn schema_outputs_valid_json() {
     assert!(output.status.success());
     let json: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("schema should output valid JSON");
+    assert_eq!(json["clispec"], "0.2");
     assert_eq!(json["name"], "recur");
-    assert!(json["commands"].is_object());
+    assert!(json["commands"].is_array());
+    assert!(json["outcomes"].is_array());
+    assert!(json["errors"].is_array());
     assert!(json["cron_reference"].is_object());
-    assert!(json["exit_codes"].is_object());
 }
 
 #[test]
 fn schema_contains_all_commands() {
     let output = recur().arg("schema").output().unwrap();
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    let commands = json["commands"].as_object().unwrap();
+    let names: Vec<&str> = json["commands"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["name"].as_str().unwrap())
+        .collect();
     for cmd in [
         "list",
         "explain",
@@ -29,7 +36,7 @@ fn schema_contains_all_commands() {
         "schema",
         "completions",
     ] {
-        assert!(commands.contains_key(cmd), "schema missing command: {cmd}");
+        assert!(names.contains(&cmd), "schema missing command: {cmd}");
     }
 }
 

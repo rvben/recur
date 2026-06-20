@@ -2,145 +2,98 @@ use serde_json::{Value, json};
 
 pub fn build_schema() -> Value {
     json!({
+        "clispec": "0.2",
         "name": "recur",
         "version": env!("CARGO_PKG_VERSION"),
         "description": "A human-friendly cron job manager",
-        "global_flags": {
-            "--json / -j": "Output as JSON (auto-enabled when stdout is not a terminal)",
-            "--quiet / -q": "Suppress output, rely on exit code only",
-            "--fields": "Filter JSON output to specific fields (comma-separated dot-paths)",
-        },
-        "exit_codes": {
-            "0": "success (or no issues found for check)",
-            "1": "runtime error",
-            "2": "issues found (check command only)",
-        },
-        "commands": {
-            "list": {
+        "global_args": [
+            {"name": "--json", "type": "boolean", "required": false, "description": "Output as JSON (-j); auto-enabled when stdout is not a terminal"},
+            {"name": "--quiet", "type": "boolean", "required": false, "description": "Suppress output, rely on the exit code only (-q)"},
+            {"name": "--fields", "type": "string", "required": false, "description": "Filter JSON output to specific comma-separated dot-paths"}
+        ],
+        "commands": [
+            {
+                "name": "list",
                 "description": "List all cron jobs with human-readable schedules",
-                "args": {
-                    "--user / -u": { "type": "string", "description": "Show jobs for a specific user (requires root for other users)" },
-                    "--all / -a": { "type": "boolean", "description": "Show all users' cron jobs (requires root)" },
-                },
-                "output_schema": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "fields": {
-                            "user": "string — username that owns the job",
-                            "schedule": "string — raw cron expression (5 fields)",
-                            "command": "string — the command to execute",
-                            "description": "string — human-readable schedule description",
-                            "source": "string — where the job is defined (UserCrontab, SystemCrontab, CronD)",
-                        }
-                    }
-                },
-                "examples": [
-                    "recur list",
-                    "recur list --user root",
-                    "recur list -a --json",
-                    "recur list --json --fields user,schedule,command",
+                "mutating": false,
+                "args": [
+                    {"name": "--user", "type": "string", "required": false, "description": "Show jobs for a specific user, -u (requires root for other users)"},
+                    {"name": "--all", "type": "boolean", "required": false, "description": "Show all users' cron jobs, -a (requires root)"}
                 ],
+                "output_fields": [
+                    {"name": "user", "type": "string", "description": "Username that owns the job"},
+                    {"name": "schedule", "type": "string", "description": "Raw cron expression (5 fields)"},
+                    {"name": "command", "type": "string", "description": "The command to execute"},
+                    {"name": "description", "type": "string", "description": "Human-readable schedule description"},
+                    {"name": "source", "type": "string", "description": "Where the job is defined (UserCrontab, SystemCrontab, CronD)"}
+                ]
             },
-            "explain": {
+            {
+                "name": "explain",
                 "description": "Explain a cron expression in plain English",
-                "args": {
-                    "expression": { "type": "string", "positional": true, "required": true, "description": "Cron expression (5 space-separated fields)" },
-                },
-                "output_schema": {
-                    "type": "object",
-                    "fields": {
-                        "expression": "string — the input cron expression",
-                        "description": "string — plain English explanation",
-                    }
-                },
-                "examples": [
-                    "recur explain '*/5 * * * *'",
-                    "recur explain '0 3 * * 1-5'",
-                    "recur explain '0 0 1 1 *' --json",
+                "mutating": false,
+                "args": [
+                    {"name": "expression", "type": "string", "required": true, "description": "Cron expression (5 space-separated fields)"}
                 ],
+                "output_fields": [
+                    {"name": "expression", "type": "string", "description": "The input cron expression"},
+                    {"name": "description", "type": "string", "description": "Plain English explanation"}
+                ]
             },
-            "check": {
+            {
+                "name": "check",
                 "description": "Check cron jobs for issues (missing scripts, permission problems, overlapping schedules)",
-                "args": {
-                    "--user / -u": { "type": "string", "description": "Check jobs for a specific user" },
-                    "--all / -a": { "type": "boolean", "description": "Check all users' cron jobs (requires root)" },
-                    "--dry-run": { "type": "boolean", "description": "Preview what would be checked without executing" },
-                },
-                "output_schema": {
-                    "type": "object",
-                    "fields": {
-                        "jobs_checked": "integer — number of jobs inspected",
-                        "issues": {
-                            "type": "array",
-                            "items": {
-                                "severity": "string — Error or Warning",
-                                "job_command": "string — the problematic command",
-                                "user": "string — owner of the job",
-                                "message": "string — description of the issue",
-                            }
-                        }
-                    }
-                },
-                "exit_codes": {
-                    "0": "no issues found",
-                    "1": "runtime error",
-                    "2": "issues detected",
-                },
-                "examples": [
-                    "recur check",
-                    "recur check --quiet  # exit code 0=clean, 2=issues",
-                    "recur check --dry-run --json",
-                    "recur check -a --json --fields issues",
+                "mutating": false,
+                "args": [
+                    {"name": "--user", "type": "string", "required": false, "description": "Check jobs for a specific user (-u)"},
+                    {"name": "--all", "type": "boolean", "required": false, "description": "Check all users' cron jobs, -a (requires root)"},
+                    {"name": "--dry-run", "type": "boolean", "required": false, "description": "Preview what would be checked without executing"}
                 ],
+                "output_fields": [
+                    {"name": "jobs_checked", "type": "integer", "description": "Number of jobs inspected"},
+                    {"name": "issues", "type": "array", "description": "Issues found; each has severity (Error|Warning), job_command, user, message"}
+                ],
+                "notes": "Exits 2 when issues are found and 0 when clean, so it works as a pre-flight gate (pair with --quiet)."
             },
-            "timeline": {
+            {
+                "name": "timeline",
                 "description": "Show a visual timeline of when jobs run in the next N hours",
-                "args": {
-                    "--hours": { "type": "integer", "default": 24, "description": "Number of hours to show" },
-                    "--user / -u": { "type": "string", "description": "Show jobs for a specific user" },
-                    "--all / -a": { "type": "boolean", "description": "Show all users' cron jobs (requires root)" },
-                },
-                "output_schema": {
-                    "type": "object",
-                    "fields": {
-                        "start": "string — ISO 8601 timestamp",
-                        "end": "string — ISO 8601 timestamp",
-                        "hours": "integer — span in hours",
-                        "events": {
-                            "type": "array",
-                            "items": {
-                                "time": "string — ISO 8601 timestamp",
-                                "user": "string",
-                                "command": "string",
-                                "schedule": "string",
-                            }
-                        }
-                    }
-                },
-                "examples": [
-                    "recur timeline",
-                    "recur timeline --hours 48",
-                    "recur timeline --json --fields events",
+                "mutating": false,
+                "args": [
+                    {"name": "--hours", "type": "integer", "required": false, "default": 24, "description": "Number of hours to show"},
+                    {"name": "--user", "type": "string", "required": false, "description": "Show jobs for a specific user (-u)"},
+                    {"name": "--all", "type": "boolean", "required": false, "description": "Show all users' cron jobs, -a (requires root)"}
                 ],
+                "output_fields": [
+                    {"name": "start", "type": "string", "description": "ISO 8601 timestamp of the window start"},
+                    {"name": "end", "type": "string", "description": "ISO 8601 timestamp of the window end"},
+                    {"name": "hours", "type": "integer", "description": "Span in hours"},
+                    {"name": "events", "type": "array", "description": "Scheduled runs; each has time (ISO 8601), user, command, schedule"}
+                ]
             },
-            "schema": {
-                "description": "Output full command schema as JSON (for AI agents and tooling)",
-                "args": {},
-                "examples": ["recur schema"],
+            {
+                "name": "schema",
+                "description": "Output this machine-readable clispec contract as JSON",
+                "mutating": false,
+                "args": [],
+                "output_fields": []
             },
-            "completions": {
+            {
+                "name": "completions",
                 "description": "Generate shell completions",
-                "args": {
-                    "shell": { "type": "string", "positional": true, "required": true, "description": "Shell to generate for (bash, zsh, fish, elvish, powershell)" },
-                },
-                "examples": [
-                    "recur completions bash",
-                    "recur completions zsh > ~/.zfunc/_recur",
-                    "recur completions fish > ~/.config/fish/completions/recur.fish",
+                "mutating": false,
+                "args": [
+                    {"name": "shell", "type": "string", "required": true, "description": "Shell to generate for (bash, zsh, fish, elvish, powershell)"}
                 ],
-            },
-        },
+                "output_fields": []
+            }
+        ],
+        "outcomes": [
+            {"kind": "issues_found", "exit_code": 2, "retryable": false, "description": "check found one or more issues (missing scripts, permission problems)"}
+        ],
+        "errors": [
+            {"kind": "runtime", "exit_code": 1, "retryable": false, "message": "Runtime error, e.g. an unreadable crontab or invalid cron expression", "hint": "Run recur --help"}
+        ],
         "cron_reference": {
             "format": "minute hour day_of_month month day_of_week",
             "fields": {
