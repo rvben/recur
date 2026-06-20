@@ -2,7 +2,7 @@ use serde_json::{Value, json};
 
 pub fn build_schema() -> Value {
     json!({
-        "name": "ogni",
+        "name": "recur",
         "version": env!("CARGO_PKG_VERSION"),
         "description": "A human-friendly cron job manager",
         "global_flags": {
@@ -36,10 +36,10 @@ pub fn build_schema() -> Value {
                     }
                 },
                 "examples": [
-                    "ogni list",
-                    "ogni list --user root",
-                    "ogni list -a --json",
-                    "ogni list --json --fields user,schedule,command",
+                    "recur list",
+                    "recur list --user root",
+                    "recur list -a --json",
+                    "recur list --json --fields user,schedule,command",
                 ],
             },
             "explain": {
@@ -55,9 +55,9 @@ pub fn build_schema() -> Value {
                     }
                 },
                 "examples": [
-                    "ogni explain '*/5 * * * *'",
-                    "ogni explain '0 3 * * 1-5'",
-                    "ogni explain '0 0 1 1 *' --json",
+                    "recur explain '*/5 * * * *'",
+                    "recur explain '0 3 * * 1-5'",
+                    "recur explain '0 0 1 1 *' --json",
                 ],
             },
             "check": {
@@ -88,10 +88,10 @@ pub fn build_schema() -> Value {
                     "2": "issues detected",
                 },
                 "examples": [
-                    "ogni check",
-                    "ogni check --quiet  # exit code 0=clean, 2=issues",
-                    "ogni check --dry-run --json",
-                    "ogni check -a --json --fields issues",
+                    "recur check",
+                    "recur check --quiet  # exit code 0=clean, 2=issues",
+                    "recur check --dry-run --json",
+                    "recur check -a --json --fields issues",
                 ],
             },
             "timeline": {
@@ -119,15 +119,15 @@ pub fn build_schema() -> Value {
                     }
                 },
                 "examples": [
-                    "ogni timeline",
-                    "ogni timeline --hours 48",
-                    "ogni timeline --json --fields events",
+                    "recur timeline",
+                    "recur timeline --hours 48",
+                    "recur timeline --json --fields events",
                 ],
             },
             "schema": {
                 "description": "Output full command schema as JSON (for AI agents and tooling)",
                 "args": {},
-                "examples": ["ogni schema"],
+                "examples": ["recur schema"],
             },
             "completions": {
                 "description": "Generate shell completions",
@@ -135,9 +135,9 @@ pub fn build_schema() -> Value {
                     "shell": { "type": "string", "positional": true, "required": true, "description": "Shell to generate for (bash, zsh, fish, elvish, powershell)" },
                 },
                 "examples": [
-                    "ogni completions bash",
-                    "ogni completions zsh > ~/.zfunc/_ogni",
-                    "ogni completions fish > ~/.config/fish/completions/ogni.fish",
+                    "recur completions bash",
+                    "recur completions zsh > ~/.zfunc/_recur",
+                    "recur completions fish > ~/.config/fish/completions/recur.fish",
                 ],
             },
         },

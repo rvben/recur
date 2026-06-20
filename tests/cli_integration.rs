@@ -1,16 +1,16 @@
 use std::process::Command;
 
-fn ogni() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_ogni"))
+fn recur() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_recur"))
 }
 
 #[test]
 fn schema_outputs_valid_json() {
-    let output = ogni().arg("schema").output().unwrap();
+    let output = recur().arg("schema").output().unwrap();
     assert!(output.status.success());
     let json: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("schema should output valid JSON");
-    assert_eq!(json["name"], "ogni");
+    assert_eq!(json["name"], "recur");
     assert!(json["commands"].is_object());
     assert!(json["cron_reference"].is_object());
     assert!(json["exit_codes"].is_object());
@@ -18,7 +18,7 @@ fn schema_outputs_valid_json() {
 
 #[test]
 fn schema_contains_all_commands() {
-    let output = ogni().arg("schema").output().unwrap();
+    let output = recur().arg("schema").output().unwrap();
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     let commands = json["commands"].as_object().unwrap();
     for cmd in [
@@ -35,7 +35,7 @@ fn schema_contains_all_commands() {
 
 #[test]
 fn explain_json_envelope() {
-    let output = ogni()
+    let output = recur()
         .args(["explain", "*/5 * * * *", "--json"])
         .output()
         .unwrap();
@@ -48,7 +48,7 @@ fn explain_json_envelope() {
 
 #[test]
 fn explain_fields_filter() {
-    let output = ogni()
+    let output = recur()
         .args(["explain", "0 0 * * *", "--json", "--fields", "description"])
         .output()
         .unwrap();
@@ -62,7 +62,7 @@ fn explain_fields_filter() {
 
 #[test]
 fn fields_flag_auto_enables_json() {
-    let output = ogni()
+    let output = recur()
         .args(["explain", "* * * * *", "--fields", "description"])
         .output()
         .unwrap();
@@ -74,7 +74,7 @@ fn fields_flag_auto_enables_json() {
 
 #[test]
 fn check_exit_code_zero_when_clean() {
-    let output = ogni().args(["check", "--json"]).output().unwrap();
+    let output = recur().args(["check", "--json"]).output().unwrap();
     // Exit 0 = no issues (or no jobs), exit 2 = issues found
     let code = output.status.code().unwrap();
     assert!(code == 0 || code == 2);
@@ -84,7 +84,7 @@ fn check_exit_code_zero_when_clean() {
 
 #[test]
 fn check_json_ok_matches_exit_code() {
-    let output = ogni().args(["check", "--json"]).output().unwrap();
+    let output = recur().args(["check", "--json"]).output().unwrap();
     let code = output.status.code().unwrap();
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     if code == 0 {
@@ -96,7 +96,7 @@ fn check_json_ok_matches_exit_code() {
 
 #[test]
 fn check_quiet_produces_no_output() {
-    let output = ogni().args(["check", "--quiet"]).output().unwrap();
+    let output = recur().args(["check", "--quiet"]).output().unwrap();
     assert!(
         output.stdout.is_empty(),
         "stdout should be empty with --quiet"
@@ -105,7 +105,7 @@ fn check_quiet_produces_no_output() {
 
 #[test]
 fn check_dry_run_json() {
-    let output = ogni()
+    let output = recur()
         .args(["check", "--dry-run", "--json"])
         .output()
         .unwrap();
@@ -118,7 +118,7 @@ fn check_dry_run_json() {
 
 #[test]
 fn list_json_envelope() {
-    let output = ogni().args(["list", "--json"]).output().unwrap();
+    let output = recur().args(["list", "--json"]).output().unwrap();
     assert!(output.status.success());
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(json["ok"], true);
@@ -127,7 +127,7 @@ fn list_json_envelope() {
 
 #[test]
 fn timeline_json_envelope() {
-    let output = ogni()
+    let output = recur()
         .args(["timeline", "--hours", "1", "--json"])
         .output()
         .unwrap();
@@ -142,41 +142,41 @@ fn timeline_json_envelope() {
 
 #[test]
 fn completions_bash_outputs_something() {
-    let output = ogni().args(["completions", "bash"]).output().unwrap();
+    let output = recur().args(["completions", "bash"]).output().unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stdout.contains("ogni"),
-        "bash completions should reference 'ogni'"
+        stdout.contains("recur"),
+        "bash completions should reference 'recur'"
     );
 }
 
 #[test]
 fn completions_zsh_outputs_something() {
-    let output = ogni().args(["completions", "zsh"]).output().unwrap();
+    let output = recur().args(["completions", "zsh"]).output().unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("ogni"));
+    assert!(stdout.contains("recur"));
 }
 
 #[test]
 fn version_flag() {
-    let output = ogni().arg("--version").output().unwrap();
+    let output = recur().arg("--version").output().unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("ogni"));
+    assert!(stdout.contains("recur"));
 }
 
 #[test]
 fn invalid_command_returns_error() {
-    let output = ogni().arg("nonexistent").output().unwrap();
+    let output = recur().arg("nonexistent").output().unwrap();
     assert!(!output.status.success());
 }
 
 #[test]
 fn error_json_envelope() {
     // Force a runtime error by requesting a nonexistent user's crontab
-    let output = ogni()
+    let output = recur()
         .args(["list", "--user", "nonexistent_user_xyz_12345", "--json"])
         .output()
         .unwrap();

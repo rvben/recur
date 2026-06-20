@@ -7,12 +7,12 @@ use clap_complete::Shell;
     version,
     after_long_help = "\
 Examples:
-  ogni list
-  ogni list --user root
-  ogni explain \"*/5 * * * *\"
-  ogni check
-  ogni timeline
-  ogni schema"
+  recur list
+  recur list --user root
+  recur explain \"*/5 * * * *\"
+  recur check
+  recur timeline
+  recur schema"
 )]
 pub struct Cli {
     /// Output as JSON
@@ -92,5 +92,5 @@ pub enum Command {
 
 pub fn print_completions(shell: Shell) {
     let mut cmd = Cli::command();
-    clap_complete::generate(shell, &mut cmd, "ogni", &mut std::io::stdout());
+    clap_complete::generate(shell, &mut cmd, "recur", &mut std::io::stdout());
 }
