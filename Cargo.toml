@@ -1,6 +1,6 @@
 [package]
 name = "recur"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "A human-friendly cron job manager"
 license = "MIT"
