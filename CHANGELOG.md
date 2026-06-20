@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.1.0] - 2026-06-20
 
+Initial release: a human-friendly cron job manager.
+
 ### Added
 
-- add agent optimization and complete CLI polish ([67c655a](https://github.com/rvben/recur/commit/67c655ad59256b35d5d7ff48a758726e04eb6c96))
-- initial croncli implementation ([9415d12](https://github.com/rvben/recur/commit/9415d120d8df2111dd075a992af399945a659d6d))
+- `list` renders crontab schedules in plain English, with `--user` and `--all`.
+- `explain` translates any cron expression to plain English.
+- `check` flags issues such as missing scripts and permission problems, exiting 2 when any are found.
+- `timeline` shows upcoming runs over a configurable window.
+- `schema` emits a machine-readable contract for agents; structured output via `--json` and `--fields`.
