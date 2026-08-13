@@ -10,7 +10,7 @@ fn schema_outputs_valid_json() {
     assert!(output.status.success());
     let json: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("schema should output valid JSON");
-    assert_eq!(json["clispec"], "0.2");
+    assert_eq!(json["clispec"], "0.3");
     assert_eq!(json["name"], "recur");
     assert!(json["commands"].is_array());
     assert!(json["outcomes"].is_array());
@@ -129,7 +129,8 @@ fn list_json_envelope() {
     assert!(output.status.success());
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(json["ok"], true);
-    assert!(json["data"].is_array());
+    assert!(json["data"]["items"].is_array());
+    assert!(json["data"]["total"].is_number());
 }
 
 #[test]
@@ -188,7 +189,16 @@ fn error_json_envelope() {
         .output()
         .unwrap();
     // Might succeed (empty) or fail depending on system
-    let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    // Either ok:true with empty data, or ok:false with error
-    assert!(json["ok"].is_boolean());
+    if output.status.success() {
+        let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(json["ok"], true);
+    } else {
+        let last = String::from_utf8_lossy(&output.stderr)
+            .lines()
+            .last()
+            .unwrap()
+            .to_string();
+        let json: serde_json::Value = serde_json::from_str(&last).unwrap();
+        assert!(json["error"]["kind"].is_string());
+    }
 }

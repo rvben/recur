@@ -2,20 +2,28 @@ use serde_json::{Value, json};
 
 pub fn build_schema() -> Value {
     json!({
-        "clispec": "0.2",
+        "clispec": "0.3",
         "name": "recur",
         "version": env!("CARGO_PKG_VERSION"),
         "description": "A human-friendly cron job manager",
+        "output": {"tty": "text", "piped": "json"},
         "global_args": [
             {"name": "--json", "type": "boolean", "required": false, "description": "Output as JSON (-j); auto-enabled when stdout is not a terminal"},
+            {"name": "--output", "short": "-o", "type": "string", "enum": ["auto", "json", "text"], "default": "auto", "description": "Explicit output format; overrides terminal detection"},
             {"name": "--quiet", "type": "boolean", "required": false, "description": "Suppress output, rely on the exit code only (-q)"},
-            {"name": "--fields", "type": "string", "required": false, "description": "Filter JSON output to specific comma-separated dot-paths"}
+            {"name": "--fields", "type": "string", "required": false, "description": "Filter JSON output to specific comma-separated dot-paths"},
+            {"name": "--limit", "type": "integer", "required": false, "default": 100, "description": "Maximum records returned by list"},
+            {"name": "--offset", "type": "integer", "required": false, "default": 0, "description": "Records to skip before returning list results"}
         ],
         "commands": [
             {
                 "name": "list",
                 "description": "List all cron jobs with human-readable schedules",
+                "effects": "read_only",
                 "mutating": false,
+                "cardinality": "unbounded",
+                "pagination": {"style": "offset", "limit_arg": "--limit", "offset_arg": "--offset"},
+                "fields_arg": "--fields",
                 "args": [
                     {"name": "--user", "type": "string", "required": false, "description": "Show jobs for a specific user, -u (requires root for other users)"},
                     {"name": "--all", "type": "boolean", "required": false, "description": "Show all users' cron jobs, -a (requires root)"}
@@ -31,19 +39,24 @@ pub fn build_schema() -> Value {
             {
                 "name": "explain",
                 "description": "Explain a cron expression in plain English",
+                "effects": "read_only",
                 "mutating": false,
+                "cardinality": "single",
                 "args": [
                     {"name": "expression", "type": "string", "required": true, "description": "Cron expression (5 space-separated fields)"}
                 ],
                 "output_fields": [
                     {"name": "expression", "type": "string", "description": "The input cron expression"},
                     {"name": "description", "type": "string", "description": "Plain English explanation"}
-                ]
+                ],
+                "example": {"args": ["explain", "0 0 * * *"]}
             },
             {
                 "name": "check",
                 "description": "Check cron jobs for issues (missing scripts, permission problems, overlapping schedules)",
+                "effects": "read_only",
                 "mutating": false,
+                "cardinality": "single",
                 "args": [
                     {"name": "--user", "type": "string", "required": false, "description": "Check jobs for a specific user (-u)"},
                     {"name": "--all", "type": "boolean", "required": false, "description": "Check all users' cron jobs, -a (requires root)"},
@@ -51,14 +64,16 @@ pub fn build_schema() -> Value {
                 ],
                 "output_fields": [
                     {"name": "jobs_checked", "type": "integer", "description": "Number of jobs inspected"},
-                    {"name": "issues", "type": "array", "description": "Issues found; each has severity (Error|Warning), job_command, user, message"}
+                    {"name": "issues", "type": "array", "items": {"type": "object"}, "description": "Issues found; each has severity (Error|Warning), job_command, user, message"}
                 ],
                 "notes": "Exits 2 when issues are found and 0 when clean, so it works as a pre-flight gate (pair with --quiet)."
             },
             {
                 "name": "timeline",
                 "description": "Show a visual timeline of when jobs run in the next N hours",
+                "effects": "read_only",
                 "mutating": false,
+                "cardinality": "single",
                 "args": [
                     {"name": "--hours", "type": "integer", "required": false, "default": 24, "description": "Number of hours to show"},
                     {"name": "--user", "type": "string", "required": false, "description": "Show jobs for a specific user (-u)"},
@@ -68,30 +83,35 @@ pub fn build_schema() -> Value {
                     {"name": "start", "type": "string", "description": "ISO 8601 timestamp of the window start"},
                     {"name": "end", "type": "string", "description": "ISO 8601 timestamp of the window end"},
                     {"name": "hours", "type": "integer", "description": "Span in hours"},
-                    {"name": "events", "type": "array", "description": "Scheduled runs; each has time (ISO 8601), user, command, schedule"}
+                    {"name": "events", "type": "array", "items": {"type": "object"}, "description": "Scheduled runs; each has time (ISO 8601), user, command, schedule"}
                 ]
             },
             {
                 "name": "schema",
                 "description": "Output this machine-readable clispec contract as JSON",
+                "effects": "read_only",
                 "mutating": false,
+                "cardinality": "single",
                 "args": [],
-                "output_fields": []
+                "stdout_schema": {"$ref": "https://clispec.dev/schema/v0.3.json"}
             },
             {
                 "name": "completions",
                 "description": "Generate shell completions",
+                "effects": "read_only",
                 "mutating": false,
+                "output_kind": "opaque",
+                "media_type": "text/plain",
                 "args": [
                     {"name": "shell", "type": "string", "required": true, "description": "Shell to generate for (bash, zsh, fish, elvish, powershell)"}
-                ],
-                "output_fields": []
+                ]
             }
         ],
         "outcomes": [
-            {"kind": "issues_found", "exit_code": 2, "retryable": false, "description": "check found one or more issues (missing scripts, permission problems)"}
+            {"name": "issues_found", "code": 2, "description": "check found one or more issues (missing scripts, permission problems)"}
         ],
         "errors": [
+            {"kind": "usage", "exit_code": 3, "retryable": false, "message": "Invalid command-line arguments", "hint": "Run recur --help"},
             {"kind": "runtime", "exit_code": 1, "retryable": false, "message": "Runtime error, e.g. an unreadable crontab or invalid cron expression", "hint": "Run recur --help"}
         ],
         "cron_reference": {

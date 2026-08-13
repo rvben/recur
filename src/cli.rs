@@ -1,4 +1,4 @@
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 
 #[derive(Parser)]
@@ -19,6 +19,10 @@ pub struct Cli {
     #[arg(long, short = 'j', global = true)]
     pub json: bool,
 
+    /// Output format; auto uses text on a terminal and JSON when piped
+    #[arg(long, short = 'o', value_enum, default_value = "auto", global = true)]
+    pub output: OutputFormat,
+
     /// Suppress output, rely on exit code only
     #[arg(long, short = 'q', global = true)]
     pub quiet: bool,
@@ -27,8 +31,23 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub fields: Option<String>,
 
+    /// Maximum records returned by list
+    #[arg(long, default_value_t = 100, global = true)]
+    pub limit: usize,
+
+    /// Records to skip before returning list results
+    #[arg(long, default_value_t = 0, global = true)]
+    pub offset: usize,
+
     #[command(subcommand)]
     pub command: Command,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+pub enum OutputFormat {
+    Auto,
+    Json,
+    Text,
 }
 
 #[derive(Subcommand)]

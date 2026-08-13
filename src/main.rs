@@ -12,43 +12,59 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use clap::Parser;
+use clap::error::ErrorKind;
 
-use cli::{Cli, Command};
+use cli::{Cli, Command, OutputFormat};
 
 /// Exit code: issues found by `check`
 const EXIT_ISSUES: u8 = 2;
 
 fn main() -> ExitCode {
-    match run() {
+    let cli = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => match error.kind() {
+            ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+                let _ = error.print();
+                return ExitCode::SUCCESS;
+            }
+            _ => {
+                emit_error("usage", &error.to_string(), 3);
+                return ExitCode::from(3);
+            }
+        },
+    };
+
+    match run(cli) {
         Ok(code) => ExitCode::from(code),
         Err(err) => {
-            let json_mode = std::env::args().any(|a| a == "--json" || a == "-j")
-                || !std::io::stdout().is_terminal();
-
-            if json_mode {
-                let envelope = serde_json::json!({
-                    "ok": false,
-                    "error": { "message": err.to_string() },
-                });
-                println!("{}", serde_json::to_string_pretty(&envelope).unwrap());
-            } else {
-                eprintln!("Error: {err}");
-            }
-
+            emit_error("runtime", &err.to_string(), 1);
             ExitCode::from(1)
         }
     }
 }
 
-fn run() -> Result<u8> {
-    let cli = Cli::parse();
+fn run(cli: Cli) -> Result<u8> {
     let fields = cli.fields.as_deref();
-    let json_output = cli.json || fields.is_some() || !std::io::stdout().is_terminal();
+    let json_output = cli.json
+        || fields.is_some()
+        || match cli.output {
+            OutputFormat::Json => true,
+            OutputFormat::Text => false,
+            OutputFormat::Auto => !std::io::stdout().is_terminal(),
+        };
     let quiet = cli.quiet;
 
     match cli.command {
         Command::List { user, all } => {
-            cmd_list(user.as_deref(), all, json_output, quiet, fields)?;
+            cmd_list(
+                user.as_deref(),
+                all,
+                json_output,
+                quiet,
+                fields,
+                cli.limit,
+                cli.offset,
+            )?;
             Ok(0)
         }
         Command::Explain { expression } => {
@@ -79,20 +95,46 @@ fn cmd_list(
     json_output: bool,
     quiet: bool,
     fields: Option<&str>,
+    limit: usize,
+    offset: usize,
 ) -> Result<()> {
     let jobs = cron::list_all_jobs(user, all)?;
+    let total = jobs.len();
+    let start = offset.min(total);
+    let end = start.saturating_add(limit).min(total);
+    let jobs = &jobs[start..end];
 
     if quiet {
         return Ok(());
     }
 
     if json_output {
-        print_json(&jobs, fields);
+        let value = serde_json::json!({
+            "items": jobs,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        });
+        print_json(&value, fields);
     } else {
-        output::print_jobs_table(&jobs);
+        output::print_jobs_table(jobs);
     }
 
     Ok(())
+}
+
+fn emit_error(kind: &str, message: &str, exit_code: i32) {
+    eprintln!(
+        "{}",
+        serde_json::json!({
+            "error": {
+                "kind": kind,
+                "message": message,
+                "exit_code": exit_code,
+                "retryable": false
+            }
+        })
+    );
 }
 
 fn cmd_explain(
