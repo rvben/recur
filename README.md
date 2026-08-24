@@ -75,3 +75,8 @@ $ recur explain "0 3 * * 1-5" --json
 ## Agent integration
 
 `recur schema` prints the full machine-readable contract (commands, flags, exit codes, a cron-syntax reference, and examples) following clispec v0.2. It needs no network, auth, or config.
+
+## Releasing
+
+Vership owns versioning, changelog generation, release commits, and tags. See
+[the release runbook](docs/releases.md) for the verified workflow and recovery policy.
