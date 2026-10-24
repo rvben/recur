@@ -6,6 +6,14 @@ A human-friendly cron job manager.
 
 ## Install
 
+### Homebrew
+
+```sh
+brew install rvben/tap/recur
+```
+
+### Other installation methods
+
 ```sh
 cargo install recur
 ```
