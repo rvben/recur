@@ -182,7 +182,7 @@ jobs:
 
           cat > /tmp/recur.rb << 'FORMULA'
           class Recur < Formula
-            desc "A human-friendly cron job manager"
+            desc "Human-friendly cron job manager"
             homepage "https://github.com/rvben/recur"
             version "VERSION_NUM"
             license "MIT"
